@@ -6,6 +6,7 @@ import { useStore } from '../store/useStore';
 // Fix: Use addDays with negative value instead of missing subDays export
 import { format, isSameDay, addDays } from 'date-fns';
 import { TrendingUp, CheckCircle, Activity, Award } from 'lucide-react';
+import { getDateKey } from '../utils/helpers';
 
 const translations = {
   EN: {
@@ -40,7 +41,8 @@ export const StatisticsPage: React.FC = () => {
       // Fix: Use addDays(..., -i) instead of subDays
       const date = addDays(new Date(), -i);
       const dayName = format(date, 'EEE', { locale: language === 'NL' ? undefined : undefined }); // date-fns locale could be added if needed
-      const count = activities.filter(c => isSameDay(new Date(c.completedAt), date)).length;
+      const targetDateKey = getDateKey(date);
+      const count = activities.filter(c => c.dateKey === targetDateKey).length;
       data.push({ name: dayName, count });
     }
     return data;
@@ -78,7 +80,7 @@ export const StatisticsPage: React.FC = () => {
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
-                <YAxis hide />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} allowDecimals={false} />
                 <Tooltip 
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                   labelStyle={{ fontWeight: 'bold' }}
@@ -103,6 +105,7 @@ export const StatisticsPage: React.FC = () => {
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} allowDecimals={false} />
                 <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
                 <Bar dataKey="count" radius={[6, 6, 0, 0]}>
                   {chartData.map((entry, index) => (
