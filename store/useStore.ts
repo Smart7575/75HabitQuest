@@ -32,9 +32,21 @@ export const useStore = () => {
     nextLevelXp: 500
   });
 
-  const [language, setLanguage] = useState<Language>('NL');
+  const [language, setLanguageState] = useState<Language>(() => {
+    return (localStorage.getItem('habitquest_language') as Language) || 'NL';
+  });
   const [isLoaded, setIsLoaded] = useState(false);
   const lastUpdateRef = useRef<number>(0);
+
+  const setLanguage = useCallback((newLang: Language) => {
+    setLanguageState(newLang);
+    localStorage.setItem('habitquest_language', newLang);
+    if (user) {
+      updateDoc(doc(db, 'users', user.uid), { language: newLang }).catch(err => {
+        console.error("Error updating language in Firestore:", err);
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!user) {
@@ -45,7 +57,12 @@ export const useStore = () => {
 
     const unsubStats = onSnapshot(doc(db, 'users', userId), (docSnap) => {
       if (docSnap.exists()) {
-        setStats(prev => ({ ...prev, ...docSnap.data() }));
+        const data = docSnap.data();
+        setStats(prev => ({ ...prev, ...data }));
+        if (data.language) {
+          setLanguageState(data.language);
+          localStorage.setItem('habitquest_language', data.language);
+        }
       }
     });
 

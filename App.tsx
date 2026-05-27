@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { HashRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import { LayoutDashboard, CheckSquare, Gift, BarChart2, Settings, LogOut, Shield, Zap, Target, User as UserIcon } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Gift, BarChart2, Settings, LogOut, Shield, Zap, Target, User as UserIcon, Globe } from 'lucide-react';
 import { Dashboard } from './pages/Dashboard';
 import { TasksPage } from './pages/TasksPage';
 import { RewardsPage } from './pages/RewardsPage';
@@ -28,7 +28,9 @@ const translations = {
     settings: "Settings",
     logout: "Logout",
     hero: "Hero",
-    dayStreak: "Day Streak"
+    dayStreak: "Day Streak",
+    languageLabel: "Language",
+    chooseLanguage: "Choose thy language"
   },
   NL: {
     heroProfile: "Hero Profiel",
@@ -47,13 +49,15 @@ const translations = {
     settings: "Instellingen",
     logout: "Uitloggen",
     hero: "Held",
-    dayStreak: "Dagen Streak"
+    dayStreak: "Dagen Streak",
+    languageLabel: "Taal",
+    chooseLanguage: "Kies uw taal"
   }
 };
 
 const SettingsPage: React.FC = () => {
   const { user } = useAuth();
-  const { stats, language } = useStore();
+  const { stats, language, setLanguage } = useStore();
   const t = translations[language];
 
   const getTitle = (level: number) => {
@@ -104,6 +108,29 @@ const SettingsPage: React.FC = () => {
       <div className="space-y-4">
         <h3 className="text-lg font-black text-slate-800 ml-4 rpg-font">{t.preferences}</h3>
         <div className="bg-white rounded-3xl border border-slate-100 p-6 space-y-4">
+          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+            <div className="flex items-center gap-3">
+              <Globe className="w-5 h-5 text-blue-500" />
+              <div>
+                <p className="font-bold text-slate-800 text-sm">{t.languageLabel}</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase">{t.chooseLanguage}</p>
+              </div>
+            </div>
+            <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <button 
+                onClick={() => setLanguage('EN')}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${language === 'EN' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                ENG
+              </button>
+              <button 
+                onClick={() => setLanguage('NL')}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${language === 'NL' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                NL
+              </button>
+            </div>
+          </div>
           <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
             <div className="flex items-center gap-3">
               <Zap className="w-5 h-5 text-amber-500" />

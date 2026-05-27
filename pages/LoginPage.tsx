@@ -11,7 +11,14 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const [language, setLanguage] = useState<'EN' | 'NL'>('NL');
+  const [language, setLanguageState] = useState<'EN' | 'NL'>(() => {
+    return (localStorage.getItem('habitquest_language') as 'EN' | 'NL') || 'NL';
+  });
+
+  const setLanguage = (lang: 'EN' | 'NL') => {
+    setLanguageState(lang);
+    localStorage.setItem('habitquest_language', lang);
+  };
 
   const translations = {
     EN: {
@@ -60,7 +67,8 @@ export const LoginPage: React.FC = () => {
           totalPoints: 0,
           level: 1,
           xp: 0,
-          nextLevelXp: 500
+          nextLevelXp: 500,
+          language: language
         });
 
         // Seed initial categories

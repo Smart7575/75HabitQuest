@@ -4,13 +4,14 @@ import { Flame, Award, Zap, ChevronLeft, ChevronRight, Calendar, Gift, Sparkles,
 import { useStore } from '../store/useStore';
 import { XPBar } from '../components/XPBar';
 import { RewardCard } from '../components/RewardCard';
-import { getDateKey, getWeekDays } from '../utils/helpers';
+import { getDateKey, getWeekDays, getDayName } from '../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 import { isSameDay, format, addWeeks } from 'date-fns';
 import { Task, TaskType, ActivityStatus, Language } from '../types';
 
 const translations = {
   EN: {
+    heroLevel: "Hero Level",
     weeklyProgress: "Weekly Progress",
     trackConsistency: "Track your consistency across all missions.",
     week: "Week",
@@ -39,6 +40,7 @@ const translations = {
     noMissions: "No missions active. Go to the Tasks tab to start your quest!"
   },
   NL: {
+    heroLevel: "Hero Niveau",
     weeklyProgress: "Wekelijkse Voortgang",
     trackConsistency: "Volg je consistentie over alle missies.",
     week: "Week",
@@ -169,7 +171,7 @@ export const Dashboard: React.FC = () => {
                 <Flame className="w-10 h-10 text-orange-400 animate-fire" />
               </div>
               <div>
-                <p className="text-blue-100 text-sm font-medium uppercase tracking-widest">Hero Level</p>
+                <p className="text-blue-100 text-sm font-medium uppercase tracking-widest">{t.heroLevel}</p>
                 <h2 className="text-4xl font-black">Lvl {stats.level}</h2>
               </div>
             </div>
@@ -264,7 +266,7 @@ export const Dashboard: React.FC = () => {
                   {weekDays.map((day) => (
                     <th key={day.toString()} className="p-1 text-center">
                       <div className={`text-[9px] font-black uppercase tracking-tighter ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-400'}`}>
-                        {format(day, 'EEE')}
+                        {getDayName(day.getDay(), language)}
                       </div>
                       <div className={`text-base font-bold mt-0.5 ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-700'}`}>
                         {format(day, 'd')}
@@ -317,7 +319,7 @@ export const Dashboard: React.FC = () => {
                             const isScheduled = isTaskScheduledOnDate(task, day);
                             const isToday = isSameDay(day, new Date());
                             const isPast = !isToday && day < new Date();
-                            const dayLetter = format(day, 'EEE').charAt(0);
+                            const dayLetter = getDayName(day.getDay(), language).charAt(0);
                             
                             return (
                               <td key={day.toString()} className="p-1 text-center">
