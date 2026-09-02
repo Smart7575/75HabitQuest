@@ -2,11 +2,9 @@
 import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { useStore } from '../store/useStore';
-// Fix: Use named imports from date-fns for better reliability
-// Fix: Use addDays with negative value instead of missing subDays export
-import { format, isSameDay, addDays } from 'date-fns';
+import { addDays } from 'date-fns';
 import { TrendingUp, CheckCircle, Activity, Award } from 'lucide-react';
-import { getDateKey } from '../utils/helpers';
+import { getDateKey, getDayName } from '../utils/helpers';
 
 const translations = {
   EN: {
@@ -38,9 +36,8 @@ export const StatisticsPage: React.FC = () => {
   const chartData = useMemo(() => {
     const data = [];
     for (let i = 6; i >= 0; i--) {
-      // Fix: Use addDays(..., -i) instead of subDays
       const date = addDays(new Date(), -i);
-      const dayName = format(date, 'EEE', { locale: language === 'NL' ? undefined : undefined }); // date-fns locale could be added if needed
+      const dayName = getDayName(date.getDay(), language);
       const targetDateKey = getDateKey(date);
       const count = activities.filter(c => c.dateKey === targetDateKey).length;
       data.push({ name: dayName, count });
@@ -52,61 +49,91 @@ export const StatisticsPage: React.FC = () => {
 
   return (
     <div className="pb-24 animate-in fade-in duration-700">
-      <h1 className="text-3xl font-black text-gray-800 mb-2">{t.analytics}</h1>
-      <p className="text-gray-500 mb-8">{t.visualize}</p>
+      <h1 className="text-2xl sm:text-3xl font-black text-gray-800 mb-2">{t.analytics}</h1>
+      <p className="text-sm sm:text-base text-gray-500 mb-6 sm:mb-8">{t.visualize}</p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {[
-          { label: t.totalCompletions, value: activities.length, icon: <CheckCircle className="text-emerald-500" />, bg: 'bg-emerald-50' },
-          { label: t.consistencyScore, value: '84%', icon: <Activity className="text-blue-500" />, bg: 'bg-blue-50' },
-          { label: t.currentStreak, value: stats.streak, icon: <TrendingUp className="text-orange-500" />, bg: 'bg-orange-50' },
-          { label: t.achievements, value: '12', icon: <Award className="text-indigo-500" />, bg: 'bg-indigo-50' },
+          { label: t.totalCompletions, value: activities.length, icon: <CheckCircle className="text-emerald-500 w-5 h-5 sm:w-6 sm:h-6" />, bg: 'bg-emerald-50' },
+          { label: t.consistencyScore, value: '84%', icon: <Activity className="text-blue-500 w-5 h-5 sm:w-6 sm:h-6" />, bg: 'bg-blue-50' },
+          { label: t.currentStreak, value: stats.streak, icon: <TrendingUp className="text-orange-500 w-5 h-5 sm:w-6 sm:h-6" />, bg: 'bg-orange-50' },
+          { label: t.achievements, value: '12', icon: <Award className="text-indigo-500 w-5 h-5 sm:w-6 sm:h-6" />, bg: 'bg-indigo-50' },
         ].map((item, i) => (
-          <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+          <div key={i} className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{item.label}</p>
-              <p className="text-2xl font-black text-gray-800">{item.value}</p>
+              <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 truncate">{item.label}</p>
+              <p className="text-xl sm:text-2xl font-black text-gray-800">{item.value}</p>
             </div>
-            <div className={`${item.bg} p-3 rounded-xl`}>{item.icon}</div>
+            <div className={`${item.bg} p-2 sm:p-3 rounded-xl shrink-0`}>{item.icon}</div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">{t.activityLast7}</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-4 sm:mb-6">{t.activityLast7}</h3>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
+              <LineChart data={chartData} margin={{ top: 10, right: 15, left: -15, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} allowDecimals={false} />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={{ stroke: '#cbd5e1', strokeWidth: 1 }} 
+                  tickLine={{ stroke: '#cbd5e1' }} 
+                  tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }} 
+                  dy={6}
+                  interval={0}
+                />
+                <YAxis 
+                  axisLine={{ stroke: '#cbd5e1', strokeWidth: 1 }} 
+                  tickLine={{ stroke: '#cbd5e1' }} 
+                  tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }} 
+                  allowDecimals={false}
+                  width={32}
+                />
                 <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                  labelStyle={{ fontWeight: 'bold' }}
+                  contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  labelStyle={{ fontWeight: 'bold', color: '#1e293b' }}
                 />
                 <Line 
                   type="monotone" 
                   dataKey="count" 
                   stroke="#3b82f6" 
-                  strokeWidth={4} 
-                  dot={{ r: 6, fill: '#3b82f6', strokeWidth: 3, stroke: '#fff' }} 
-                  activeDot={{ r: 8 }}
+                  strokeWidth={3} 
+                  dot={{ r: 5, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} 
+                  activeDot={{ r: 7 }}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">{t.distribution}</h3>
+        <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-4 sm:mb-6">{t.distribution}</h3>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
+              <BarChart data={chartData} margin={{ top: 10, right: 15, left: -15, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} allowDecimals={false} />
-                <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={{ stroke: '#cbd5e1', strokeWidth: 1 }} 
+                  tickLine={{ stroke: '#cbd5e1' }} 
+                  tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }} 
+                  dy={6}
+                  interval={0}
+                />
+                <YAxis 
+                  axisLine={{ stroke: '#cbd5e1', strokeWidth: 1 }} 
+                  tickLine={{ stroke: '#cbd5e1' }} 
+                  tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }} 
+                  allowDecimals={false}
+                  width={32}
+                />
+                <Tooltip 
+                  cursor={{ fill: '#f1f5f9', opacity: 0.6 }} 
+                  contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} 
+                  labelStyle={{ fontWeight: 'bold', color: '#1e293b' }}
+                />
                 <Bar dataKey="count" radius={[6, 6, 0, 0]}>
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
