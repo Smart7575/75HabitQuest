@@ -25,7 +25,7 @@ const translations = {
     newMission: "New Mission",
     description: "Description / Info",
     extraInfo: "Extra information about this task...",
-    required: "Required (Streak)",
+    required: "Required",
     optional: "Optional",
     bonus: "Bonus",
     selectCategory: "Select Category",
@@ -63,7 +63,7 @@ const translations = {
     newMission: "Nieuwe Missie",
     description: "Beschrijving / Info",
     extraInfo: "Extra informatie over deze taak...",
-    required: "Verplicht (Streak)",
+    required: "Verplicht",
     optional: "Optioneel",
     bonus: "Bonus",
     selectCategory: "Selecteer Categorie",
@@ -88,6 +88,7 @@ const translations = {
 export const TasksPage: React.FC = () => {
   const { tasks, categories, addTask, updateTask, deleteTask, addCategory, updateCategory, deleteCategory, language } = useStore();
   const t = translations[language];
+  const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [newCatName, setNewCatName] = useState('');
@@ -108,7 +109,11 @@ export const TasksPage: React.FC = () => {
   });
 
   const groupedTasks = useMemo(() => {
-    const activeTasks = tasks.filter(t => !t.archived);
+    const activeTasks = tasks.filter(t => !t.archived && (
+      !searchQuery.trim() || 
+      t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (t.categoryName && t.categoryName.toLowerCase().includes(searchQuery.toLowerCase()))
+    ));
     const groups: Record<string, Task[]> = {};
     activeTasks.forEach(task => {
       const cat = task.categoryName || 'Uncategorized';
@@ -116,7 +121,7 @@ export const TasksPage: React.FC = () => {
       groups[cat].push(task);
     });
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
-  }, [tasks]);
+  }, [tasks, searchQuery]);
 
   const resetTaskForm = () => {
     setTaskForm({ 
@@ -242,73 +247,85 @@ export const TasksPage: React.FC = () => {
         <div className="p-4 border-b border-gray-50 bg-gray-50/50 flex flex-wrap gap-4 items-center">
           <div className="flex-1 min-w-[200px] relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" placeholder={t.searchTasks} className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
+            <input 
+              type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t.searchTasks} 
+              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20" 
+            />
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50/50 text-left text-xs uppercase text-gray-400 font-bold tracking-wider">
+          <table className="w-full text-left">
+            <thead className="bg-gray-50/50 text-left text-[9px] sm:text-xs uppercase text-gray-400 font-bold tracking-wider">
               <tr>
-                <th className="px-4 py-2">{t.taskName}</th>
-                <th className="px-4 py-2">{t.type}</th>
-                <th className="px-4 py-2">{t.schedule}</th>
-                <th className="px-4 py-2">{t.points}</th>
-                <th className="px-4 py-2 text-right">{t.actions}</th>
+                <th className="px-2 sm:px-4 py-2 w-28 sm:w-auto max-w-[100px] sm:max-w-none">{t.taskName}</th>
+                <th className="px-1.5 sm:px-4 py-2">{t.type}</th>
+                <th className="px-1.5 sm:px-4 py-2">{t.schedule}</th>
+                <th className="px-1.5 sm:px-4 py-2">{t.points}</th>
+                <th className="px-1.5 sm:px-4 py-2 text-right">{t.actions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {groupedTasks.map(([category, catTasks]) => (
                 <React.Fragment key={category}>
                   <tr className="bg-slate-50/80">
-                    <td colSpan={5} className="px-4 py-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <td colSpan={5} className="px-2 sm:px-4 py-1.5 text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest">
                       {category}
                     </td>
                   </tr>
                   {catTasks.sort((a, b) => a.name.localeCompare(b.name)).map(task => (
                     <tr key={task.id} className="hover:bg-gray-50 transition-colors group">
-                      <td className="px-4 py-2">
-                        <div className="flex items-center gap-2">
-                          <div className="font-semibold text-gray-800 text-sm">{task.name}</div>
+                      <td className="px-2 sm:px-4 py-1.5 sm:py-2 max-w-[100px] sm:max-w-[180px] md:max-w-none">
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <div 
+                            className="font-semibold text-gray-800 text-[9px] md:text-sm truncate sm:whitespace-normal leading-tight" 
+                            title={task.name}
+                          >
+                            {task.name}
+                          </div>
                           {task.description && (
                             <button 
                               onClick={() => setInfoTask(task)}
-                              className="p-1 hover:bg-blue-50 rounded-full transition-colors"
+                              className="p-0.5 sm:p-1 hover:bg-blue-50 rounded-full transition-colors shrink-0"
+                              title={task.description}
                             >
-                              <Info className="w-3.5 h-3.5 text-blue-500" />
+                              <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-500" />
                             </button>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-2">
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase
+                      <td className="px-1.5 sm:px-4 py-1.5 sm:py-2 shrink-0">
+                        <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] font-bold uppercase whitespace-nowrap inline-block
                           ${task.type === TaskType.REQUIRED ? 'bg-rose-100 text-rose-600' : 
                             task.type === TaskType.OPTIONAL ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600'}`}>
                           {task.type === TaskType.REQUIRED ? t.required : (task.type === TaskType.OPTIONAL ? t.optional : t.bonus)}
                         </span>
                       </td>
-                      <td className="px-4 py-2">
+                      <td className="px-1.5 sm:px-4 py-1.5 sm:py-2">
                         {task.frequency && task.frequency > 0 ? (
-                          <span className="text-[10px] font-bold text-indigo-600">{t.every} {task.frequency} {t.days}</span>
+                          <span className="text-[9px] sm:text-[10px] font-bold text-indigo-600 whitespace-nowrap">{t.every} {task.frequency} {t.days}</span>
                         ) : (
                           <div className="flex gap-0.5">
                             {[1,2,3,4,5,6,0].map(d => (
-                              <span key={d} className={`w-5 h-5 flex items-center justify-center rounded text-[9px] font-bold ${task.days?.includes(d) ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                              <span key={d} className={`w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded text-[8px] sm:text-[9px] font-bold shrink-0 ${task.days?.includes(d) ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
                                 {getDayName(d, language).charAt(0)}
                               </span>
                             ))}
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-2 font-bold text-gray-700 text-xs">{task.points} XP</td>
-                      <td className="px-4 py-2 text-right">
-                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <td className="px-1.5 sm:px-4 py-1.5 sm:py-2 font-bold text-gray-700 text-[9px] sm:text-xs whitespace-nowrap">{task.points} XP</td>
+                      <td className="px-1.5 sm:px-4 py-1.5 sm:py-2 text-right">
+                        <div className="flex justify-end gap-0.5 sm:gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                           {isDeleting === task.id ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
                           ) : (
                             <>
-                              <button type="button" onClick={(e) => handleOpenEditTask(e, task)} className="p-1 hover:bg-blue-50 text-blue-600 rounded transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                              <button type="button" onClick={(e) => handleDeleteTask(e, task.id)} className="p-1 hover:bg-rose-50 text-rose-600 rounded transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                              <button type="button" onClick={(e) => handleOpenEditTask(e, task)} className="p-1 hover:bg-blue-50 text-blue-600 rounded transition-colors"><Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" /></button>
+                              <button type="button" onClick={(e) => handleDeleteTask(e, task.id)} className="p-1 hover:bg-rose-50 text-rose-600 rounded transition-colors"><Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /></button>
                             </>
                           )}
                         </div>

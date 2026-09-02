@@ -257,18 +257,18 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl sm:rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-gray-50/50">
-                  <th className="py-2 px-4 text-left text-xs font-black text-gray-400 uppercase tracking-widest min-w-[220px]">{t.mission}</th>
+                  <th className="py-2 px-2 sm:px-6 text-left text-[10px] sm:text-xs font-black text-gray-400 uppercase tracking-widest min-w-[100px] sm:min-w-[220px] max-w-[115px] sm:max-w-none">{t.mission}</th>
                   {weekDays.map((day) => (
-                    <th key={day.toString()} className="p-1 text-center">
-                      <div className={`text-[9px] font-black uppercase tracking-tighter ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-400'}`}>
+                    <th key={day.toString()} className="p-0.5 sm:p-1 text-center min-w-[28px] sm:min-w-[40px]">
+                      <div className={`text-[7px] sm:text-[9px] font-black uppercase tracking-tighter ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-400'}`}>
                         {getDayName(day.getDay(), language)}
                       </div>
-                      <div className={`text-base font-bold mt-0.5 ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-700'}`}>
+                      <div className={`text-[11px] sm:text-base font-bold mt-0.5 ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-700'}`}>
                         {format(day, 'd')}
                       </div>
                     </th>
@@ -280,7 +280,7 @@ export const Dashboard: React.FC = () => {
                   groupedTasks.map(([category, catTasks]) => (
                     <React.Fragment key={category}>
                       <tr className="bg-blue-50">
-                        <td colSpan={8} className="py-1 px-6 text-[9px] font-black text-blue-600 uppercase tracking-widest">
+                        <td colSpan={8} className="py-1 px-2 sm:px-6 text-[8px] sm:text-[9px] font-black text-blue-600 uppercase tracking-widest">
                           {category}
                         </td>
                       </tr>
@@ -288,26 +288,29 @@ export const Dashboard: React.FC = () => {
                         const taskStreak = calculateTaskStreak(task.id);
                         return (
                           <tr key={task.id} className="hover:bg-gray-50/50 transition-colors">
-                            <td className="py-1.5 px-6">
-                              <div className="flex items-center gap-2">
-                                <div className="font-bold text-gray-800 text-xs leading-tight">{task.name}</div>
+                            <td className="py-1 px-2 sm:px-6 max-w-[105px] sm:max-w-none">
+                              <div className="flex items-center gap-1 sm:gap-2">
+                                <div className="font-bold text-gray-800 text-[10px] sm:text-xs leading-tight truncate sm:whitespace-normal" title={task.name}>
+                                  {task.name}
+                                </div>
                                 {taskStreak > 0 && (
-                                  <div className="flex items-center gap-0.5 bg-orange-50 px-1.5 py-0.5 rounded-lg border border-orange-100">
-                                    <Flame className="w-2.5 h-2.5 text-orange-500 fill-orange-500" />
-                                    <span className="text-[9px] font-black text-orange-600">{taskStreak}</span>
+                                  <div className="flex items-center gap-0.5 bg-orange-50 px-1 sm:px-1.5 py-0.5 rounded-md sm:rounded-lg border border-orange-100 shrink-0">
+                                    <Flame className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-orange-500 fill-orange-500" />
+                                    <span className="text-[7px] sm:text-[9px] font-black text-orange-600">{taskStreak}</span>
                                   </div>
                                 )}
                                 {task.description && (
                                   <button 
                                     onClick={() => setInfoTask(task)}
-                                    className="p-1 hover:bg-blue-50 rounded-full transition-colors"
+                                    className="p-0.5 sm:p-1 hover:bg-blue-50 rounded-full transition-colors shrink-0"
+                                    title={task.description}
                                   >
-                                    <Info className="w-3 h-3 text-blue-500" />
+                                    <Info className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-blue-500" />
                                   </button>
                                 )}
                               </div>
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <span className={`text-[7px] font-black uppercase px-1 py-0.25 rounded ${task.type === TaskType.REQUIRED ? 'bg-rose-50 text-rose-500' : 'bg-blue-50 text-blue-500'}`}>
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <span className={`text-[6px] sm:text-[7px] font-black uppercase px-1 py-0.25 rounded whitespace-nowrap ${task.type === TaskType.REQUIRED ? 'bg-rose-50 text-rose-500' : 'bg-blue-50 text-blue-500'}`}>
                                   {task.type === TaskType.REQUIRED ? t.required : (task.type === TaskType.OPTIONAL ? t.optional : 'Bonus')}
                                 </span>
                               </div>
@@ -322,11 +325,11 @@ export const Dashboard: React.FC = () => {
                             const dayLetter = getDayName(day.getDay(), language).charAt(0);
                             
                             return (
-                              <td key={day.toString()} className="p-1 text-center">
+                              <td key={day.toString()} className="p-0.5 sm:p-1 text-center">
                                 <button
                                   onClick={() => toggleTask(task.id, day)}
                                   className={`
-                                    w-8 h-8 rounded-lg flex items-center justify-center transition-all mx-auto font-black text-[9px]
+                                    w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center transition-all mx-auto font-black text-[8px] sm:text-[9px]
                                     ${isCompleted 
                                       ? (isCompletedByOther 
                                           ? 'bg-amber-400 text-white shadow-lg shadow-amber-100 scale-105' 
@@ -337,7 +340,7 @@ export const Dashboard: React.FC = () => {
                                             : 'bg-blue-600 text-white shadow-lg shadow-blue-100') 
                                         : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
                                     }
-                                    ${isToday && !isCompleted ? 'ring-2 ring-blue-400 ring-offset-2' : ''}
+                                    ${isToday && !isCompleted ? 'ring-2 ring-blue-400 ring-offset-1 sm:ring-offset-2' : ''}
                                   `}
                                 >
                                   {dayLetter}
