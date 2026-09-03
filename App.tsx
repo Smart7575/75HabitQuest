@@ -1,26 +1,18 @@
 
 import React from 'react';
 import { HashRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import { LayoutDashboard, CheckSquare, Gift, BarChart2, Settings, LogOut, Shield, Zap, Target, User as UserIcon, Globe } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Gift, BarChart2, Settings, LogOut, Zap } from 'lucide-react';
 import { Dashboard } from './pages/Dashboard';
 import { TasksPage } from './pages/TasksPage';
 import { RewardsPage } from './pages/RewardsPage';
 import { StatisticsPage } from './pages/StatisticsPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { LoginPage } from './pages/LoginPage';
 import { AuthProvider, useAuth } from './components/AuthProvider';
 import { useStore } from './store/useStore';
 
 const translations = {
   EN: {
-    heroProfile: "Hero Profile",
-    preferences: "Preferences",
-    gamifiedAudio: "Gamified Audio",
-    sfxOnTask: "SFX on task completion",
-    dailyReminders: "Daily Reminders",
-    pushNotifications: "Push notifications",
-    level: "Level",
-    streak: "Streak",
-    totalXP: "Total XP",
     dashboard: "Dashboard",
     missions: "Missions",
     treasure: "Treasure",
@@ -28,20 +20,9 @@ const translations = {
     settings: "Settings",
     logout: "Logout",
     hero: "Hero",
-    dayStreak: "Day Streak",
-    languageLabel: "Language",
-    chooseLanguage: "Choose thy language"
+    dayStreak: "Day Streak"
   },
   NL: {
-    heroProfile: "Hero Profiel",
-    preferences: "Voorkeuren",
-    gamifiedAudio: "Gegamificeerde Audio",
-    sfxOnTask: "SFX bij voltooiing taak",
-    dailyReminders: "Dagelijkse Herinneringen",
-    pushNotifications: "Push notificaties",
-    level: "Niveau",
-    streak: "Streak",
-    totalXP: "Totaal XP",
     dashboard: "Dashboard",
     missions: "Missies",
     treasure: "Schatkist",
@@ -49,116 +30,8 @@ const translations = {
     settings: "Instellingen",
     logout: "Uitloggen",
     hero: "Held",
-    dayStreak: "Dagen Streak",
-    languageLabel: "Taal",
-    chooseLanguage: "Kies uw taal"
+    dayStreak: "Dagen Streak"
   }
-};
-
-const SettingsPage: React.FC = () => {
-  const { user } = useAuth();
-  const { stats, language, setLanguage } = useStore();
-  const t = translations[language];
-
-  const getTitle = (level: number) => {
-    if (language === 'EN') {
-      if (level < 5) return 'Quest Novice';
-      if (level < 10) return 'Habit Warrior';
-      if (level < 20) return 'Consistency Knight';
-      return 'Quest Master';
-    } else {
-      if (level < 5) return 'Quest Groentje';
-      if (level < 10) return 'Habit Krijger';
-      if (level < 20) return 'Consistentie Ridder';
-      return 'Quest Meester';
-    }
-  };
-
-  return (
-    <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <h1 className="text-3xl font-black text-slate-800 mb-8 rpg-font">{t.heroProfile}</h1>
-      
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden mb-8">
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-8 flex flex-col items-center text-white">
-          <div className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center text-4xl font-black mb-4 border border-white/30 animate-float">
-            {user?.email?.[0].toUpperCase()}
-          </div>
-          <h2 className="text-2xl font-black">{user?.email?.split('@')[0]}</h2>
-          <div className="flex items-center gap-2 mt-2 bg-white/20 px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest backdrop-blur-md">
-            <Shield className="w-3 h-3" /> {getTitle(stats.level)}
-          </div>
-        </div>
-        
-        <div className="p-8 grid grid-cols-3 gap-6 text-center">
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.level}</p>
-            <p className="text-2xl font-black text-slate-800">{stats.level}</p>
-          </div>
-          <div className="border-x border-slate-50">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.streak}</p>
-            <p className="text-2xl font-black text-blue-600">{stats.streak}</p>
-          </div>
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.totalXP}</p>
-            <p className="text-2xl font-black text-slate-800">{stats.totalPoints}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-black text-slate-800 ml-4 rpg-font">{t.preferences}</h3>
-        <div className="bg-white rounded-3xl border border-slate-100 p-6 space-y-4">
-          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-            <div className="flex items-center gap-3">
-              <Globe className="w-5 h-5 text-blue-500" />
-              <div>
-                <p className="font-bold text-slate-800 text-sm">{t.languageLabel}</p>
-                <p className="text-[10px] text-slate-400 font-bold uppercase">{t.chooseLanguage}</p>
-              </div>
-            </div>
-            <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-              <button 
-                onClick={() => setLanguage('EN')}
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${language === 'EN' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-              >
-                ENG
-              </button>
-              <button 
-                onClick={() => setLanguage('NL')}
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${language === 'NL' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-              >
-                NL
-              </button>
-            </div>
-          </div>
-          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-            <div className="flex items-center gap-3">
-              <Zap className="w-5 h-5 text-amber-500" />
-              <div>
-                <p className="font-bold text-slate-800 text-sm">{t.gamifiedAudio}</p>
-                <p className="text-[10px] text-slate-400 font-bold uppercase">{t.sfxOnTask}</p>
-              </div>
-            </div>
-            <div className="w-12 h-6 bg-blue-600 rounded-full relative">
-               <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
-            </div>
-          </div>
-          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-            <div className="flex items-center gap-3">
-              <Target className="w-5 h-5 text-indigo-500" />
-              <div>
-                <p className="font-bold text-slate-800 text-sm">{t.dailyReminders}</p>
-                <p className="text-[10px] text-slate-400 font-bold uppercase">{t.pushNotifications}</p>
-              </div>
-            </div>
-            <div className="w-12 h-6 bg-slate-200 rounded-full relative">
-               <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 };
 
 const AuthenticatedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
