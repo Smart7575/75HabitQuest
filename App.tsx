@@ -185,11 +185,22 @@ const AuthenticatedLayout: React.FC<{ children: React.ReactNode }> = ({ children
             {/* User Identity Display */}
             <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
-                  {user?.email?.[0].toUpperCase()}
-                </div>
+                {user?.photoURL ? (
+                  <img 
+                    src={user.photoURL} 
+                    alt={user.displayName || 'User'} 
+                    className="w-8 h-8 rounded-lg object-cover border border-slate-200" 
+                    referrerPolicy="no-referrer" 
+                  />
+                ) : (
+                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">
+                    {(user?.displayName || user?.email || 'U')[0].toUpperCase()}
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-black text-slate-800 truncate">{user?.email?.split('@')[0]}</p>
+                  <p className="text-xs font-black text-slate-800 truncate">
+                    {user?.displayName || user?.email?.split('@')[0]}
+                  </p>
                   <p className="text-[10px] font-bold text-blue-600 uppercase">Lvl {stats.level} {t.hero}</p>
                 </div>
               </div>
