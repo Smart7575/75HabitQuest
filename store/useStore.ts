@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Task, TaskActivity, Reward, TaskType, UserStats, Category, ActivityStatus, Language } from '../types';
-import { getDateKey, getPointsForType, calculateXP } from '../utils/helpers';
+import { getDateKey, getPointsForType, calculateXP, parseTaskStartDate, isTaskScheduledOnDate } from '../utils/helpers';
+import { playTaskCompleteSound, playLevelUpSound, playSubtleClick } from '../utils/audio';
 import { addDays, startOfDay, isSameDay } from 'date-fns';
 import { db } from '../utils/firebase';
 import { 
@@ -35,8 +36,22 @@ export const useStore = () => {
   const [language, setLanguageState] = useState<Language>(() => {
     return (localStorage.getItem('habitquest_language') as Language) || 'NL';
   });
+  const [audioEnabled, setAudioEnabledState] = useState<boolean>(() => {
+    const saved = localStorage.getItem('habitquest_audio');
+    return saved !== null ? saved === 'true' : true;
+  });
   const [isLoaded, setIsLoaded] = useState(false);
   const lastUpdateRef = useRef<number>(0);
+
+  const setAudioEnabled = useCallback((enabled: boolean) => {
+    setAudioEnabledState(enabled);
+    localStorage.setItem('habitquest_audio', enabled ? 'true' : 'false');
+    if (user) {
+      updateDoc(doc(db, 'users', user.uid), { audioEnabled: enabled }).catch(err => {
+        console.error("Error updating audio setting in Firestore:", err);
+      });
+    }
+  }, [user]);
 
   const setLanguage = useCallback((newLang: Language) => {
     setLanguageState(newLang);
@@ -62,6 +77,10 @@ export const useStore = () => {
         if (data.language) {
           setLanguageState(data.language);
           localStorage.setItem('habitquest_language', data.language);
+        }
+        if (data.audioEnabled !== undefined) {
+          setAudioEnabledState(data.audioEnabled);
+          localStorage.setItem('habitquest_audio', data.audioEnabled ? 'true' : 'false');
         }
       }
     });
@@ -94,8 +113,7 @@ export const useStore = () => {
 
     // Helper to check if a task is scheduled on a specific date
     const checkIsTaskScheduled = (t: Task, date: Date) => {
-      const taskStart = new Date(t.startDate || t.createdAt);
-      taskStart.setHours(0, 0, 0, 0);
+      const taskStart = parseTaskStartDate(t);
       const d = new Date(date);
       d.setHours(0, 0, 0, 0);
       
@@ -107,8 +125,13 @@ export const useStore = () => {
           .filter(a => a.taskId === t.id)
           .sort((a, b) => b.completedAt - a.completedAt);
         
-        const lastActivityBefore = taskActivities.find(a => a.dateKey < dateKey);
-        const ref = lastActivityBefore ? new Date(lastActivityBefore.dateKey) : taskStart;
+        const lastActivityBefore = taskActivities.find(a => {
+          const aDate = new Date(a.dateKey.includes('T') ? a.dateKey : `${a.dateKey}T00:00:00`);
+          return aDate < d;
+        });
+        const ref = lastActivityBefore 
+          ? new Date(lastActivityBefore.dateKey.includes('T') ? lastActivityBefore.dateKey : `${lastActivityBefore.dateKey}T00:00:00`) 
+          : taskStart;
         ref.setHours(0, 0, 0, 0);
         const diff = Math.round((d.getTime() - ref.getTime()) / (1000 * 3600 * 24));
         return diff >= 0 && diff % t.frequency === 0;
@@ -277,10 +300,16 @@ export const useStore = () => {
         const newTotal = Math.max(0, stats.totalPoints - task.points);
         const { level, xp } = calculateXP(newTotal);
         await updateDoc(userRef, { totalPoints: newTotal, level, xp });
+        if (audioEnabled) {
+          playSubtleClick();
+        }
       } else {
         // Switch from COMPLETED_BY_OTHER to NONE
         await deleteDoc(doc(db, 'users', user.uid, 'taskactivities', existing.id));
         // No points to subtract here because we already subtracted them when moving to COMPLETED_BY_OTHER
+        if (audioEnabled) {
+          playSubtleClick();
+        }
       }
     } else {
       // Switch from NONE to COMPLETED
@@ -293,68 +322,106 @@ export const useStore = () => {
       const newTotal = stats.totalPoints + task.points;
       const { level, xp } = calculateXP(newTotal);
       await updateDoc(userRef, { totalPoints: newTotal, level, xp });
+      if (audioEnabled) {
+        if (level > stats.level) {
+          playLevelUpSound();
+        } else {
+          playTaskCompleteSound();
+        }
+      }
     }
   };
 
   const addReward = async (reward: Omit<Reward, 'id' | 'active'>) => {
     if (!user) return;
-    await addDoc(collection(db, 'users', user.uid, 'rewards'), { ...reward, active: true });
+    await addDoc(collection(db, 'users', user.uid, 'rewards'), { 
+      ...reward, 
+      active: true,
+      startPoints: reward.startPoints !== undefined ? reward.startPoints : stats.totalPoints,
+      startDate: reward.startDate || Date.now(),
+      durationWeeks: reward.durationWeeks || 13
+    });
   };
 
   const calculateTaskStreak = useCallback((taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
-    if (!task || task.type !== TaskType.REQUIRED) return 0;
+    if (!task) return 0;
 
-    // Get unique completion dates from dateKey, sorted descending
-    const completionDateTimes: number[] = (Array.from(new Set(
-      activities
-        .filter(a => a.taskId === taskId)
-        .map(a => {
-          // Use dateKey as the source of truth for the "day" of completion
-          const d = new Date(a.dateKey);
-          d.setHours(0, 0, 0, 0);
-          return d.getTime();
-        })
-    )) as number[]).sort((a: number, b: number) => b - a);
+    // Filter only valid completed activities for this task
+    const taskActivities = activities.filter(a => 
+      a.taskId === taskId && 
+      (!a.status || a.status === ActivityStatus.COMPLETED)
+    );
     
-    if (completionDateTimes.length === 0) return 0;
+    if (taskActivities.length === 0) return 0;
+
+    let taskStart = parseTaskStartDate(task);
+    taskActivities.forEach(a => {
+      const aDate = new Date(a.dateKey.includes('T') ? a.dateKey : `${a.dateKey}T00:00:00`);
+      aDate.setHours(0, 0, 0, 0);
+      if (!isNaN(aDate.getTime()) && aDate < taskStart) {
+        taskStart = aDate;
+      }
+    });
+
+    const completedDateKeys = new Set(taskActivities.map(a => a.dateKey));
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayTime = today.getTime();
-    const lastCompletionTime = completionDateTimes[0];
-    const diffDays = (start: number, end: number) => Math.round((end - start) / (1000 * 3600 * 24));
+    const todayKey = getDateKey(today);
 
-    // Allowed gap depends on frequency. If frequency is 0 (fixed days), we allow a gap based on schedule.
-    // However, for simplicity in "Option 2" (total days), we check if the chain is broken.
-    const allowedGap = (task.frequency && task.frequency > 0) ? task.frequency : 1;
-    
-    // If the gap since last completion is greater than the allowed gap, streak is broken
-    // Note: If today is not completed yet, we check if the gap from last completion to today is still within allowedGap
-    const gapToToday = diffDays(lastCompletionTime, todayTime);
-    if (gapToToday > allowedGap) return 0;
+    let currentStreak = 0;
+    let checkDate = new Date(today);
 
-    // Find the earliest activity in the current chain
-    let earliestTime = lastCompletionTime;
-    for (let i = 0; i < completionDateTimes.length - 1; i++) {
-      const current = completionDateTimes[i];
-      const previous = completionDateTimes[i+1];
-      
-      // For frequency tasks, we use the set frequency. 
-      // For fixed days, we check if the previous completion was within a reasonable range.
-      // If frequency is 0, it's daily/weekly. A gap of 7 days is a safe "max" for any weekly task.
-      const maxGap = (task.frequency && task.frequency > 0) ? task.frequency : 7;
-      
-      if (diffDays(previous, current) <= maxGap) {
-        earliestTime = previous;
+    // If today is completed, count it towards the current streak
+    if (completedDateKeys.has(todayKey)) {
+      currentStreak++;
+      checkDate = addDays(checkDate, -1);
+    } else {
+      // Today is not completed yet. Today is still open/pending,
+      // so if today was scheduled, we do not break the streak immediately;
+      // we check starting from yesterday backwards.
+      checkDate = addDays(checkDate, -1);
+    }
+
+    const maxLookback = addDays(today, -365);
+
+    while (checkDate >= maxLookback && checkDate >= taskStart) {
+      const dateKey = getDateKey(checkDate);
+      const isScheduled = isTaskScheduledOnDate(task, checkDate, activities);
+      const isCompleted = completedDateKeys.has(dateKey);
+
+      if (isScheduled) {
+        if (isCompleted) {
+          currentStreak++;
+          checkDate = addDays(checkDate, -1);
+        } else {
+          // A scheduled day in the past was missed -> the streak is broken!
+          break;
+        }
       } else {
-        break;
+        // Non-scheduled day (e.g. rest day or weekend)
+        if (isCompleted) {
+          // Bonus completion on unscheduled day
+          currentStreak++;
+        }
+        // Non-scheduled days without completion do not break the streak
+        checkDate = addDays(checkDate, -1);
       }
     }
-    
-    // The streak is the number of days from the earliest completion in the chain until today
-    return diffDays(earliestTime, todayTime) + 1;
+
+    return currentStreak;
   }, [activities, tasks]);
+
+  const updateReward = async (rewardId: string, data: Partial<Reward>) => {
+    if (!user) return;
+    await updateDoc(doc(db, 'users', user.uid, 'rewards', rewardId), data);
+  };
+
+  const deleteReward = async (rewardId: string) => {
+    if (!user) return;
+    await deleteDoc(doc(db, 'users', user.uid, 'rewards', rewardId));
+  };
 
   const claimReward = async (rewardId: string) => {
     if (!user) return;
@@ -364,5 +431,5 @@ export const useStore = () => {
     });
   };
 
-  return { tasks, activities, rewards, stats, categories, language, setLanguage, calculateTaskStreak, addTask, updateTask, deleteTask, toggleTask, addReward, claimReward, addCategory, updateCategory, deleteCategory };
+  return { tasks, activities, rewards, stats, categories, language, setLanguage, audioEnabled, setAudioEnabled, calculateTaskStreak, addTask, updateTask, deleteTask, toggleTask, addReward, updateReward, deleteReward, claimReward, addCategory, updateCategory, deleteCategory };
 };

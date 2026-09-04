@@ -4,7 +4,7 @@ import { Flame, Award, Zap, ChevronLeft, ChevronRight, Calendar, Gift, Sparkles,
 import { useStore } from '../store/useStore';
 import { XPBar } from '../components/XPBar';
 import { RewardCard } from '../components/RewardCard';
-import { getDateKey, getWeekDays, getDayName } from '../utils/helpers';
+import { getDateKey, getWeekDays, getDayName, parseTaskStartDate } from '../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 import { isSameDay, format, addWeeks } from 'date-fns';
 import { Task, TaskType, ActivityStatus, Language } from '../types';
@@ -18,7 +18,7 @@ const translations = {
     mission: "Mission",
     activeQuest: "Active Quest",
     noActiveReward: "No Active Reward",
-    setGoal: "Set a goal to motivate your streak!",
+    setGoal: "Set a 13-week XP goal to motivate your quest!",
     chooseReward: "Choose a Reward",
     heroInsights: "Hero Insights",
     statsOverview: "Stats Overview",
@@ -47,7 +47,7 @@ const translations = {
     mission: "Missie",
     activeQuest: "Actieve Quest",
     noActiveReward: "Geen Actieve Beloning",
-    setGoal: "Stel een doel in om je streak te motiveren!",
+    setGoal: "Stel een 13-weken XP doel in om je quest te motiveren!",
     chooseReward: "Kies een Beloning",
     heroInsights: "Hero Inzichten",
     statsOverview: "Statistieken Overzicht",
@@ -71,7 +71,7 @@ const translations = {
 };
 
 export const Dashboard: React.FC = () => {
-  const { tasks, activities, stats, rewards, toggleTask, language, setLanguage, calculateTaskStreak } = useStore();
+  const { tasks, activities, stats, rewards, toggleTask, claimReward, language, setLanguage, calculateTaskStreak } = useStore();
   const navigate = useNavigate();
   const [baseDate, setBaseDate] = useState(new Date());
   const [infoTask, setInfoTask] = useState<Task | null>(null);
@@ -121,8 +121,7 @@ export const Dashboard: React.FC = () => {
   };
 
   const isTaskScheduledOnDate = (task: Task, date: Date) => {
-    const taskStart = new Date(task.startDate || task.createdAt);
-    taskStart.setHours(0, 0, 0, 0);
+    const taskStart = parseTaskStartDate(task);
     
     const checkDate = new Date(date);
     checkDate.setHours(0, 0, 0, 0);
@@ -136,9 +135,12 @@ export const Dashboard: React.FC = () => {
         .filter(a => a.taskId === task.id)
         .sort((a, b) => b.completedAt - a.completedAt);
       
-      const lastActivityBeforeDate = taskActivities.find(a => new Date(a.dateKey) < checkDate);
+      const lastActivityBeforeDate = taskActivities.find(a => {
+        const aDate = new Date(a.dateKey.includes('T') ? a.dateKey : `${a.dateKey}T00:00:00`);
+        return aDate < checkDate;
+      });
       const referenceDate = lastActivityBeforeDate 
-        ? new Date(lastActivityBeforeDate.dateKey) 
+        ? new Date(lastActivityBeforeDate.dateKey.includes('T') ? lastActivityBeforeDate.dateKey : `${lastActivityBeforeDate.dateKey}T00:00:00`) 
         : taskStart;
       
       referenceDate.setHours(0, 0, 0, 0);
@@ -150,7 +152,7 @@ export const Dashboard: React.FC = () => {
     return task.days?.includes(date.getDay());
   };
   
-  const activeReward = rewards.find(r => r.active);
+  const activeReward = rewards.find(r => r.active && !r.achievedAt) || rewards.find(r => !r.achievedAt);
 
   const goToNextWeek = () => setBaseDate(prev => addWeeks(prev, 1));
   const goToPrevWeek = () => setBaseDate(prev => addWeeks(prev, -1));
@@ -165,8 +167,8 @@ export const Dashboard: React.FC = () => {
         </div>
         
         <div className="relative z-10">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 w-full">
+            <div className="flex items-center gap-4 shrink-0">
               <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-md">
                 <Flame className="w-10 h-10 text-orange-400 animate-fire" />
               </div>
@@ -176,28 +178,28 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
-              <div className="w-full md:w-64 bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/10">
-                <XPBar level={stats.level} xp={stats.xp} nextLevelXp={stats.nextLevelXp} />
-                <div className="mt-2 flex justify-between text-[10px] uppercase tracking-wider font-bold text-blue-100">
-                  <span>{t.totalPoints}</span>
-                  <span>{stats.totalPoints}</span>
-                </div>
-              </div>
-              
+            <div className="flex-1 w-full min-w-0 flex flex-col items-end gap-2">
               <div className="flex bg-white/10 p-1 rounded-xl backdrop-blur-md border border-white/20">
                 <button 
                   onClick={() => setLanguage('EN')}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${language === 'EN' ? 'bg-white text-blue-600 shadow-sm' : 'text-blue-100 hover:bg-white/10'}`}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all cursor-pointer ${language === 'EN' ? 'bg-white text-blue-600 shadow-sm' : 'text-blue-100 hover:bg-white/10'}`}
                 >
                   ENG
                 </button>
                 <button 
                   onClick={() => setLanguage('NL')}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${language === 'NL' ? 'bg-white text-blue-600 shadow-sm' : 'text-blue-100 hover:bg-white/10'}`}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all cursor-pointer ${language === 'NL' ? 'bg-white text-blue-600 shadow-sm' : 'text-blue-100 hover:bg-white/10'}`}
                 >
                   NL
                 </button>
+              </div>
+
+              <div className="w-full bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/10">
+                <XPBar level={stats.level} xp={stats.xp} nextLevelXp={stats.nextLevelXp} />
+                <div className="mt-2 flex justify-between text-[10px] uppercase tracking-wider font-bold text-blue-100">
+                  <span>{t.totalPoints}</span>
+                  <span>{stats.totalPoints}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -258,17 +260,17 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-2xl sm:rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto custom-scrollbar">
+          <div className="overflow-x-auto sm:overflow-x-visible custom-scrollbar">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-gray-50/50">
-                  <th className="py-2 px-2 sm:px-6 text-left text-[10px] sm:text-xs font-black text-gray-400 uppercase tracking-widest min-w-[100px] sm:min-w-[220px] max-w-[115px] sm:max-w-none">{t.mission}</th>
+                  <th className="py-1.5 px-1.5 sm:py-2 sm:px-6 text-left text-[9px] sm:text-xs font-black text-gray-400 uppercase tracking-widest min-w-[70px] sm:min-w-[220px] max-w-[85px] sm:max-w-none">{t.mission}</th>
                   {weekDays.map((day) => (
-                    <th key={day.toString()} className="p-0.5 sm:p-1 text-center min-w-[28px] sm:min-w-[40px]">
+                    <th key={day.toString()} className="p-0.5 sm:p-1 text-center min-w-[22px] sm:min-w-[40px]">
                       <div className={`text-[7px] sm:text-[9px] font-black uppercase tracking-tighter ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-400'}`}>
                         {getDayName(day.getDay(), language)}
                       </div>
-                      <div className={`text-[11px] sm:text-base font-bold mt-0.5 ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-700'}`}>
+                      <div className={`text-[10px] sm:text-base font-bold mt-0.5 ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-700'}`}>
                         {format(day, 'd')}
                       </div>
                     </th>
@@ -279,8 +281,8 @@ export const Dashboard: React.FC = () => {
                 {groupedTasks.length > 0 ? (
                   groupedTasks.map(([category, catTasks]) => (
                     <React.Fragment key={category}>
-                      <tr className="bg-blue-50">
-                        <td colSpan={8} className="py-1 px-2 sm:px-6 text-[8px] sm:text-[9px] font-black text-blue-600 uppercase tracking-widest">
+                      <tr className="bg-blue-50/70">
+                        <td colSpan={8} className="py-0.5 px-1.5 sm:py-1 sm:px-6 text-[7px] sm:text-[9px] font-black text-blue-600 uppercase tracking-widest">
                           {category}
                         </td>
                       </tr>
@@ -288,29 +290,29 @@ export const Dashboard: React.FC = () => {
                         const taskStreak = calculateTaskStreak(task.id);
                         return (
                           <tr key={task.id} className="hover:bg-gray-50/50 transition-colors">
-                            <td className="py-1 px-2 sm:px-6 max-w-[105px] sm:max-w-none">
+                            <td className="py-0.5 px-1.5 sm:py-1 sm:px-6 max-w-[85px] sm:max-w-none">
                               <div className="flex items-center gap-1 sm:gap-2">
-                                <div className="font-bold text-gray-800 text-[10px] sm:text-xs leading-tight truncate sm:whitespace-normal" title={task.name}>
+                                <div className="font-bold text-gray-800 text-[9px] sm:text-xs leading-none truncate sm:whitespace-normal" title={task.name}>
                                   {task.name}
                                 </div>
                                 {taskStreak > 0 && (
-                                  <div className="flex items-center gap-0.5 bg-orange-50 px-1 sm:px-1.5 py-0.5 rounded-md sm:rounded-lg border border-orange-100 shrink-0">
-                                    <Flame className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-orange-500 fill-orange-500" />
-                                    <span className="text-[7px] sm:text-[9px] font-black text-orange-600">{taskStreak}</span>
+                                  <div className="flex items-center gap-0.5 bg-orange-50 px-0.5 sm:px-1.5 py-0.25 sm:py-0.5 rounded sm:rounded-lg border border-orange-100 shrink-0">
+                                    <Flame className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 text-orange-500 fill-orange-500" />
+                                    <span className="text-[6px] sm:text-[9px] font-black text-orange-600">{taskStreak}</span>
                                   </div>
                                 )}
                                 {task.description && (
                                   <button 
                                     onClick={() => setInfoTask(task)}
-                                    className="p-0.5 sm:p-1 hover:bg-blue-50 rounded-full transition-colors shrink-0"
+                                    className="p-0.25 sm:p-1 hover:bg-blue-50 rounded-full transition-colors shrink-0"
                                     title={task.description}
                                   >
-                                    <Info className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-blue-500" />
+                                    <Info className="w-2 h-2 sm:w-3 sm:h-3 text-blue-500" />
                                   </button>
                                 )}
                               </div>
                               <div className="flex items-center gap-1 mt-0.5">
-                                <span className={`text-[6px] sm:text-[7px] font-black uppercase px-1 py-0.25 rounded whitespace-nowrap ${task.type === TaskType.REQUIRED ? 'bg-rose-50 text-rose-500' : 'bg-blue-50 text-blue-500'}`}>
+                                <span className={`text-[5px] sm:text-[7px] font-black uppercase px-0.5 sm:px-1 py-0 rounded whitespace-nowrap ${task.type === TaskType.REQUIRED ? 'bg-rose-50 text-rose-500' : 'bg-blue-50 text-blue-500'}`}>
                                   {task.type === TaskType.REQUIRED ? t.required : (task.type === TaskType.OPTIONAL ? t.optional : 'Bonus')}
                                 </span>
                               </div>
@@ -329,15 +331,15 @@ export const Dashboard: React.FC = () => {
                                 <button
                                   onClick={() => toggleTask(task.id, day)}
                                   className={`
-                                    w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center transition-all mx-auto font-black text-[8px] sm:text-[9px]
+                                    w-5 h-5 sm:w-8 sm:h-8 rounded sm:rounded-lg flex items-center justify-center transition-all mx-auto font-black text-[7px] sm:text-[9px]
                                     ${isCompleted 
                                       ? (isCompletedByOther 
-                                          ? 'bg-amber-400 text-white shadow-lg shadow-amber-100 scale-105' 
-                                          : 'bg-emerald-500 text-white shadow-lg shadow-emerald-100 scale-105')
+                                          ? 'bg-amber-400 text-white shadow-sm shadow-amber-100 scale-105' 
+                                          : 'bg-emerald-500 text-white shadow-sm shadow-emerald-100 scale-105')
                                       : isScheduled 
                                         ? (isPast 
-                                            ? 'bg-rose-500 text-white shadow-lg shadow-rose-100' 
-                                            : 'bg-blue-600 text-white shadow-lg shadow-blue-100') 
+                                            ? 'bg-rose-500 text-white shadow-sm shadow-rose-100' 
+                                            : 'bg-blue-600 text-white shadow-sm shadow-blue-100') 
                                         : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
                                     }
                                     ${isToday && !isCompleted ? 'ring-2 ring-blue-400 ring-offset-1 sm:ring-offset-2' : ''}
@@ -393,7 +395,20 @@ export const Dashboard: React.FC = () => {
             <Award className="w-5 h-5 text-indigo-500" />
           </h2>
           {activeReward ? (
-            <RewardCard reward={activeReward} currentStreak={stats.streak} />
+            <RewardCard 
+              reward={activeReward} 
+              tasks={tasks}
+              activities={activities}
+              totalPoints={stats.totalPoints}
+              currentStreak={stats.streak}
+              language={language}
+              onEdit={() => navigate('/rewards')}
+              onClaim={async (id) => {
+                if (window.confirm(language === 'NL' ? "Deze beloning claimen en toevoegen aan je Eregalerij?" : "Claim this reward and add it to your Hall of Fame?")) {
+                  await claimReward(id);
+                }
+              }}
+            />
           ) : (
             <div className="bg-indigo-50 rounded-2xl p-6 border border-indigo-100 text-center h-full flex flex-col justify-center">
               <Gift className="w-10 h-10 text-indigo-300 mx-auto mb-3" />

@@ -40,12 +40,12 @@ const AuthenticatedLayout: React.FC<{ children: React.ReactNode }> = ({ children
   const t = translations[language];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
-      {/* Navigation: fixed bottom bar on mobile/tablet (< md), sidebar on desktop (>= md) */}
-      <nav className="fixed bottom-0 left-0 right-0 w-full md:relative md:w-64 md:h-screen bg-white/95 md:bg-white backdrop-blur-md md:backdrop-blur-none border-t md:border-t-0 md:border-r border-slate-200/90 md:border-slate-100 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] md:shadow-none">
+    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row w-full max-w-full overflow-x-hidden">
+      {/* Navigation: fixed bottom bar on mobile & tablet (< lg), sidebar on desktop (>= lg) */}
+      <nav className="fixed bottom-0 left-0 right-0 w-full lg:relative lg:w-64 lg:h-screen bg-white/95 lg:bg-white backdrop-blur-md lg:backdrop-blur-none border-t lg:border-t-0 lg:border-r border-slate-200/90 lg:border-slate-100 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] lg:shadow-none shrink-0">
         
         {/* Desktop Sidebar Layout */}
-        <div className="hidden md:flex flex-col h-full px-4 py-8 justify-start gap-3">
+        <div className="hidden lg:flex flex-col h-full px-4 py-8 justify-start gap-3">
           {/* Logo Section */}
           <div className="flex flex-col gap-6 px-4 mb-4">
             <div className="flex items-center gap-3">
@@ -135,7 +135,7 @@ const AuthenticatedLayout: React.FC<{ children: React.ReactNode }> = ({ children
         </div>
 
         {/* Mobile & Tablet Bottom Bar: 1 clean horizontal row without wrapping */}
-        <div className="flex md:hidden items-center justify-between px-1.5 py-1.5 w-full">
+        <div className="flex lg:hidden items-center justify-between px-1.5 py-1.5 w-full">
           <NavLink 
             to="/" 
             className={({isActive}) => `flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${isActive ? 'text-blue-600 font-bold bg-blue-50' : 'text-slate-400 hover:text-slate-600'}`}
@@ -187,8 +187,8 @@ const AuthenticatedLayout: React.FC<{ children: React.ReactNode }> = ({ children
         </div>
       </nav>
 
-      <main className="flex-1 overflow-y-auto custom-scrollbar min-h-screen">
-        <div className="max-w-6xl mx-auto px-4 md:px-8 pt-6 pb-28 md:py-12">
+      <main className="flex-1 min-w-0 w-full overflow-y-auto overflow-x-hidden custom-scrollbar min-h-screen">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-28 lg:py-12">
           {children}
         </div>
       </main>

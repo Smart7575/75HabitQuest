@@ -54,7 +54,11 @@ export interface Reward {
   id: string;
   name: string;
   description?: string;
-  durationDays: number;
+  durationDays?: number; // legacy
+  durationWeeks?: number; // e.g. 13
+  targetXp?: number; // XP target needed to unlock
+  weeklyXp?: number; // Calculated weekly task XP when created
+  startPoints?: number; // Total points at time of creation
   startDate: number;
   active: boolean;
   imageUrl?: string;

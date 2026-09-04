@@ -14,6 +14,7 @@ import {
 import { useAuth } from '../components/AuthProvider';
 import { useStore } from '../store/useStore';
 import { deleteUserAccountAndData } from '../utils/accountDeletion';
+import { playTaskCompleteSound } from '../utils/audio';
 
 const translations = {
   EN: {
@@ -88,7 +89,7 @@ const translations = {
 
 export const SettingsPage: React.FC = () => {
   const { user } = useAuth();
-  const { stats, language, setLanguage } = useStore();
+  const { stats, language, setLanguage, audioEnabled, setAudioEnabled } = useStore();
   const t = translations[language];
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -232,15 +233,33 @@ export const SettingsPage: React.FC = () => {
           </div>
           <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
             <div className="flex items-center gap-3">
-              <Zap className="w-5 h-5 text-amber-500" />
+              <Zap className={`w-5 h-5 transition-colors ${audioEnabled ? 'text-amber-500' : 'text-slate-400'}`} />
               <div>
                 <p className="font-bold text-slate-800 text-sm">{t.gamifiedAudio}</p>
                 <p className="text-[10px] text-slate-400 font-bold uppercase">{t.sfxOnTask}</p>
               </div>
             </div>
-            <div className="w-12 h-6 bg-blue-600 rounded-full relative">
-               <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
-            </div>
+            <button
+              type="button"
+              id="toggle-gamified-audio"
+              onClick={() => {
+                const next = !audioEnabled;
+                setAudioEnabled(next);
+                if (next) {
+                  playTaskCompleteSound();
+                }
+              }}
+              aria-label={t.gamifiedAudio}
+              className={`w-12 h-6 rounded-full relative transition-colors focus:outline-none cursor-pointer ${
+                audioEnabled ? 'bg-blue-600' : 'bg-slate-300'
+              }`}
+            >
+              <div 
+                className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-200 ${
+                  audioEnabled ? 'left-7' : 'left-1'
+                }`}
+              />
+            </button>
           </div>
           <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
             <div className="flex items-center gap-3">
