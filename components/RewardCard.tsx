@@ -21,7 +21,7 @@ export const RewardCard: React.FC<RewardCardProps> = ({
   tasks = [], 
   activities = [], 
   totalPoints = 0,
-  language = 'NL',
+  language = 'EN',
   onClaim,
   onEdit,
   onDelete

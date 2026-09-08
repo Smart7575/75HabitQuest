@@ -17,7 +17,7 @@ export const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [language, setLanguageState] = useState<'EN' | 'NL'>(() => {
-    return (localStorage.getItem('habitquest_language') as 'EN' | 'NL') || 'NL';
+    return (localStorage.getItem('habitquest_language') as 'EN' | 'NL') || 'EN';
   });
 
   const setLanguage = (lang: 'EN' | 'NL') => {

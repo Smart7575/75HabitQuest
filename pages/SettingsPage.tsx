@@ -3,7 +3,6 @@ import {
   Shield, 
   Globe, 
   Zap, 
-  Target, 
   Trash2, 
   AlertTriangle, 
   Loader2, 
@@ -22,8 +21,6 @@ const translations = {
     preferences: "Preferences",
     gamifiedAudio: "Gamified Audio",
     sfxOnTask: "SFX on task completion",
-    dailyReminders: "Daily Reminders",
-    pushNotifications: "Push notifications",
     level: "Level",
     streak: "Streak",
     totalXP: "Total XP",
@@ -56,8 +53,6 @@ const translations = {
     preferences: "Voorkeuren",
     gamifiedAudio: "Gegamificeerde Audio",
     sfxOnTask: "SFX bij voltooiing taak",
-    dailyReminders: "Dagelijkse Herinneringen",
-    pushNotifications: "Push notificaties",
     level: "Niveau",
     streak: "Streak",
     totalXP: "Totaal XP",
@@ -260,18 +255,6 @@ export const SettingsPage: React.FC = () => {
                 }`}
               />
             </button>
-          </div>
-          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-            <div className="flex items-center gap-3">
-              <Target className="w-5 h-5 text-indigo-500" />
-              <div>
-                <p className="font-bold text-slate-800 text-sm">{t.dailyReminders}</p>
-                <p className="text-[10px] text-slate-400 font-bold uppercase">{t.pushNotifications}</p>
-              </div>
-            </div>
-            <div className="w-12 h-6 bg-slate-200 rounded-full relative">
-               <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
-            </div>
           </div>
         </div>
       </div>

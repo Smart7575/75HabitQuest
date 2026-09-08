@@ -34,7 +34,7 @@ export const useStore = () => {
   });
 
   const [language, setLanguageState] = useState<Language>(() => {
-    return (localStorage.getItem('habitquest_language') as Language) || 'NL';
+    return (localStorage.getItem('habitquest_language') as Language) || 'EN';
   });
   const [audioEnabled, setAudioEnabledState] = useState<boolean>(() => {
     const saved = localStorage.getItem('habitquest_audio');
